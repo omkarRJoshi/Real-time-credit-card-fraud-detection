@@ -2,7 +2,7 @@ package com.geca.configs
 
 import org.apache.log4j.Logger
 
-object cassandraConfigs {
+object CassandraConfig {
   val logger = Logger.getLogger(getClass.getName);
   
   var keySpace:String = _
