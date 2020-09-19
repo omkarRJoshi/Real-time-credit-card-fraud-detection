@@ -10,14 +10,12 @@ import com.geca.configs.CassandraConfig
 import org.apache.spark.sql.types.IntegerType
 import com.geca.utils.Utils
 
-//import 
-
 object InitialImportToCassandra {
   def main(args : Array[String]){
     
     CassandraConfig.default()                 
     SparkConfig.defaultSetting()    
-    val sparkSession = SparkSession.builder().config(SparkConfig.sparkConf).appName("fraud detection").getOrCreate()
+    val sparkSession = SparkSession.builder().config(SparkConfig.sparkConf).appName("cassandra importer").getOrCreate()
     import sparkSession.implicits._
     
     val transactionDf = Utils.reader(SparkConfig.transactionDatasouce, Schema.fruadCheckedTransactionSchema, sparkSession)

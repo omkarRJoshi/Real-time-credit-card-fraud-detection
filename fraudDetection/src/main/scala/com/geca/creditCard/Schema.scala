@@ -56,4 +56,16 @@ object Schema {
     .add(Enums.TransactionKafka.amt, StringType, true)
     .add(Enums.TransactionKafka.merch_lat, StringType, true)
     .add(Enums.TransactionKafka.merch_long, StringType, true)
+    
+  val kafkaSchema = new StructType()
+    .add("cc_num", StringType,true)
+    .add("first", StringType, true)
+    .add("last", StringType, true)
+    .add("trans_num", StringType, true)
+    .add("trans_time", StringType, true)
+    .add("category", StringType, true)
+    .add("merchant", StringType, true)
+    .add("amt", StringType, true)
+    .add("merch_lat", StringType, true)
+    .add("merch_long", StringType, true)
 }
