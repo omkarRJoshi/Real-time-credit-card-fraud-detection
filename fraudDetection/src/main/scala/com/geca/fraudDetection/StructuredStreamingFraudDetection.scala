@@ -44,8 +44,8 @@ object StructuredStreamingFraudDetection {
    
    val predictedFraud = predictionDf.filter($"is_fraud" === 1.0)
    val notPredictedFraud = predictionDf.filter($"is_fraud" =!= 1.0)
-    transactionStreamDf.writeStream.format("console").outputMode("append").start().awaitTermination()
-    sparkSession.stop()                      
+   transactionStreamDf.writeStream.format("console").outputMode("append").start().awaitTermination()
+   sparkSession.stop()                      
   }
   
   def getStream(sparkSession:SparkSession) ={
