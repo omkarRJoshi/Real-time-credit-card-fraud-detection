@@ -11,42 +11,59 @@ import com.geca.configs.CassandraConfig
 import org.apache.spark.ml.evaluation.RegressionEvaluator
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
+import com.geca.utils.Utils
+import com.geca.pipeline.BuildPipeline
+import org.apache.spark.ml.feature.OneHotEncoder
+import org.apache.spark.ml.PipelineStage
+import scala.collection.mutable.ListBuffer
+import com.geca.algorithms.MlAlgorithms
 
 object FraudDetectionModelTraining {
   def main(args:Array[String]){
     CassandraConfig.default()                 
     SparkConfig.defaultSetting() 
     Logger.getLogger("org").setLevel(Level.ERROR)
-    val sparkSession = SparkSession.builder().config(SparkConfig.sparkConf).appName("Basic ml job").getOrCreate()
-    val file:String = "/home/omkar/Desktop/wine-data.csv";
+    val sparkSession = SparkSession.builder().config(SparkConfig.sparkConf).appName("Train models for fraud detection").getOrCreate()
     
-     val schemaStruct = StructType(
-            StructField("country", StringType) ::
-            StructField("points", DoubleType) ::
-            StructField("price", DoubleType) :: Nil
-     )
-     
-    val data = sparkSession.read.option("header", true).schema(schemaStruct).csv(file).na.drop()
-    data.show()
-    val Array(training, testData) = data.randomSplit(Array(.7,.3))
-    val labelCol = "price"
+    import sparkSession.implicits._
     
-    val countryIndexer = new StringIndexer().setInputCol("country").setOutputCol("countryIndex").setHandleInvalid("keep")
-    val assembler = new VectorAssembler().setInputCols(Array("points", "countryIndex")).setOutputCol("features")
-    val lr = new LinearRegression().setLabelCol(labelCol).setFeaturesCol("features").setPredictionCol("predicted " + labelCol)
+    val fraudTransactionDf = Utils.readFromCassandra(CassandraConfig.keySpace, CassandraConfig.fraudTransactionTable, sparkSession)
+                                  .select("cc_num" , "category", "merchant", "distance", "amt", "age", "is_fraud")
+    val nonFraudTransactionDf = Utils.readFromCassandra(CassandraConfig.keySpace, CassandraConfig.nonFraudTransactionTable, sparkSession)
+                                  .select("cc_num" , "category", "merchant", "distance", "amt", "age", "is_fraud")   
+                                  
+    val transactionDf = fraudTransactionDf.union(nonFraudTransactionDf)
+    transactionDf.cache()
     
-    val stages = Array(countryIndexer, assembler, lr)
-    val pipeline = new Pipeline().setStages(stages)
-    val model = pipeline.fit(training)
-    val prediction = model.transform(testData)
-    prediction.show()
-    val evaluator = new RegressionEvaluator()
-            .setLabelCol(labelCol)
-            .setPredictionCol("predicted " + labelCol)
-            .setMetricName("rmse")
-        //We compute the error using the evaluator
-        val error = evaluator.evaluate(prediction)
-        println(error)
+    val columnNames = List("cc_num", "category", "merchant", "distance", "amt", "age")
+    
+    val pipelineStages = BuildPipeline.create(columnNames)
+
+    val pipeline = new Pipeline().setStages(pipelineStages.toArray)
+    val preprocessingModel = pipeline.fit(transactionDf)//.transform(transactionDf)
+    
+    println()
+    println("Saving preprocessing model")
+    preprocessingModel.save(SparkConfig.preprocessingModelPath)
+    val featureDf = preprocessingModel.transform(transactionDf)
+//    preprocessingModel.printSchema()
+//    preprocessingModel.show()
+    
+    val fraudDf = featureDf.filter($"is_fraud" === 1)
+                                    .withColumnRenamed("is_fraud", "label")
+                                    .select("features", "label")
+    val nonFraudDf = featureDf.filter($"is_fraud" =!= 1)
+    val fraudCount = fraudDf.count()
+    
+    val balancedNonFraudDf = MlAlgorithms.dataBalanceWithKMean(nonFraudDf, fraudCount, sparkSession)
+    val finalFeatureDf = fraudDf.union(balancedNonFraudDf)
+    
+    val randomForestModel = MlAlgorithms.randomForestClassifier(finalFeatureDf, sparkSession)
+    
+    println()
+    println("Saving random forest model")
+    
+    randomForestModel.save(SparkConfig.modelPath)
     sparkSession.stop()
   }
 }

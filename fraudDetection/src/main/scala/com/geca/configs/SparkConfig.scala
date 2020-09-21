@@ -26,7 +26,8 @@ object SparkConfig {
 //    shutdownMarker = "/tmp/shutdownmarker"
     transactionDatasouce = "/home/omkar/workspace/beProject/real-time-credit-card-fraud-detection/data/transactions.csv"
     customerDatasource = "/home/omkar/workspace/beProject/real-time-credit-card-fraud-detection/data/customer.csv"
-//    modelPath = "src/main/resources/spark/training/RandomForestModel"
+    modelPath = "/home/omkar/workspace/beProject/real-time-credit-card-fraud-detection/data/randomForestModel"
+    preprocessingModelPath = "/home/omkar/workspace/beProject/real-time-credit-card-fraud-detection/data/preprocessingModel"
     batchInterval = 5000
   }
 }

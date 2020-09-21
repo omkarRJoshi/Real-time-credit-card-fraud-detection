@@ -22,6 +22,7 @@ object StructuredStreamingFraudDetection {
     val sparkSession = SparkSession.builder().config(SparkConfig.sparkConf).appName("Real time credit card fraud detection").getOrCreate()
     import sparkSession.implicits._
     val customerDf = Utils.readFromCassandra(CassandraConfig.keySpace, CassandraConfig.customer, sparkSession)
+    customerDf.show()
     val customerDfWithAge = customerDf.withColumn("age", (datediff(current_date(), to_date($"dob")) / 365).cast(IntegerType));
     
    
@@ -43,8 +44,8 @@ object StructuredStreamingFraudDetection {
    
    val predictedFraud = predictionDf.filter($"is_fraud" === 1.0)
    val notPredictedFraud = predictionDf.filter($"is_fraud" =!= 1.0)
-//    transactionStreamDf.writeStream.format("console").outputMode("append").start().awaitTermination()
-                          
+    transactionStreamDf.writeStream.format("console").outputMode("append").start().awaitTermination()
+    sparkSession.stop()                      
   }
   
   def getStream(sparkSession:SparkSession) ={
