@@ -1,0 +1,1 @@
+{"class":"org.apache.spark.ml.feature.VectorAssembler","timestamp":1601273432597,"sparkVersion":"2.2.1","uid":"vecAssembler_b15d7035f7c3","paramMap":{"outputCol":"features","inputCols":["cc_num_encoded","category_encoded","merchant_encoded","distance_encoded","amt_encoded","age_encoded"]}}

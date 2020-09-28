@@ -14,8 +14,8 @@ object BuildPipeline {
      val arr = columns.map(col => {
         val stringIndexer = new StringIndexer()
         stringIndexer.setInputCol(col).setOutputCol(col + "_indexed")
-            
-        stages += stringIndexer 
+           
+        stages += stringIndexer.setHandleInvalid("keep") 
     })
     val arr2 = columns.map(col => {
         val oneHotEncoder = new OneHotEncoder()

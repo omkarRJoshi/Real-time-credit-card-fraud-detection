@@ -6,7 +6,7 @@ import org.apache.spark.ml.classification.RandomForestClassifier
 
 object MlAlgorithms {
   def dataBalanceWithKMean(df: DataFrame, reductionCount: Long, sparkSession: SparkSession) = {
-    val kmeans = new KMeans().setK(2).setMaxIter(30)
+    val kmeans = new KMeans().setK(reductionCount.toInt).setMaxIter(30)
     val model = kmeans.fit(df)
 
     import sparkSession.implicits._
